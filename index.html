@@ -136,31 +136,28 @@ const loadImg = src => new Promise((res, rej) => {
   i.src = src;
 });
 
-const QUESTIONS = [
-  {
-    q: "磁石最容易吸起哪一種物品？",
-    opts: ["膠尺", "木塊", "鐵釘", "白紙"],
-    a: 2
-  },
-  {
-    q: "小朋友把箱子推向遠處。這是哪一種力？",
-    opts: ["拉力", "浮力", "電力", "推力"],
-    a: 3
-  },
-  {
-    q: "把球拋向天空，球會掉下來，主要是因為：",
-    opts: ["風力", "地心吸力", "磁力", "聲音"],
-    a: 1
-  }
+const QUESTION_BANK = [
+  { q: "磁石最容易吸起哪一種物品？", right: "鐵釘", wrong: ["膠尺", "木塊", "白紙"] },
+  { q: "小朋友把箱子推向遠處。這是哪一種力？", right: "推力", wrong: ["拉力", "浮力", "電力"] },
+  { q: "把球拋向天空，球會掉下來，主要是因為：", right: "地心吸力", wrong: ["風力", "磁力", "聲音"] }
 ];
 
-function shuffleQuestion(Q) {
-  const items = Q.opts.map((t, i) => ({ t, ok: i === Q.a }));
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
+let liveQuestions = [];
+let lastAnswerSlot = -1;
+
+function shuffleQuestion(bank) {
+  const opts = [bank.right, ...bank.wrong];
+  let a = 0;
+  for (let n = 0; n < 12; n++) {
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+    a = opts.indexOf(bank.right);
+    if (a !== lastAnswerSlot) break;
   }
-  return { q: Q.q, opts: items.map(x => x.t), a: items.findIndex(x => x.ok) };
+  lastAnswerSlot = a;
+  return { q: bank.q, opts, a };
 }
 
 const WORLD_W = 5600;
@@ -240,6 +237,8 @@ function layout() {
 
 function resetPlay() {
   layout();
+  lastAnswerSlot = -1;
+  liveQuestions = [];
   collected = 0;
   player = {x:140, y:GROUND-PH, w:PW, h:PH, vx:0, vy:0, onG:false, dir:1, alive:true, stand:null, bounceLock:0};
   camX = 0;
@@ -329,7 +328,7 @@ function win() {
 function openQuiz(qid) {
   quizId = qid;
   state = "quiz";
-  const Q = QUESTIONS[qid] = shuffleQuestion(QUESTIONS[qid]);
+  const Q = liveQuestions[qid] = shuffleQuestion(QUESTION_BANK[qid]);
   document.getElementById("qtext").textContent = "科學題：" + Q.q;
   const box = document.getElementById("qopts");
   box.innerHTML = "";
@@ -344,7 +343,7 @@ function openQuiz(qid) {
 }
 
 function answer(i) {
-  const Q = QUESTIONS[quizId];
+  const Q = liveQuestions[quizId];
   document.getElementById("quiz").classList.remove("show");
   if (i === Q.a) {
     collected++;
