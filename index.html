@@ -187,14 +187,12 @@ function layout() {
     plat(1180, 250, 160, 22, {kind:"metal"}), // star 1
     plat(1380, GROUND, 40, 220, {kind:"metal"}),
 
-    // —— 推力區：彈床只係彈高；過河用慢而近嘅移動台 ——
-    plat(1600, GROUND, 500, 220, {kind:"wood"}),
-    plat(1860, 508, 140, 24, {kind:"bounce"}),
-    plat(2128, 430, 220, 26, {kind:"wood", mx:[2096, 2560], mvx:1.15}),
-    plat(2760, GROUND, 520, 220, {kind:"wood"}),
-    plat(2760, GROUND-8, 160, 16, {kind:"belt", belt:1.4}),
-    plat(3000, 430, 130, 24, {kind:"wood"}),
-    plat(3160, 318, 170, 24, {kind:"wood"}), // star 2
+    // —— 推力區：彈床彈高上臺，輸送帶推住行，冇大洞 ——
+    plat(1600, GROUND, 980, 220, {kind:"wood"}),
+    plat(1860, 508, 150, 24, {kind:"bounce"}),
+    plat(2140, GROUND-8, 240, 16, {kind:"belt", belt:1.8}),
+    plat(2080, 390, 150, 24, {kind:"wood"}),
+    plat(2280, 300, 180, 24, {kind:"wood"}), // star 2
 
     // —— 地心吸力區：浮台會塌、高空跳 ——
     plat(3480, 460, 130, 24, {kind:"cloud", crumb:true}),
@@ -210,12 +208,12 @@ function layout() {
   enemies = [
     {x:250, y:GROUND-36, w:54, h:36, vx:0.9, min:80, max:500, dead:false, kind:"walk"},
     {x:1000, y:GROUND-36, w:54, h:36, vx:1.1, min:880, max:1400, dead:false, kind:"walk"},
-    {x:3300, y:GROUND-36, w:54, h:36, vx:0.8, min:2940, max:3240, dead:false, kind:"walk"},
+    {x:2500, y:GROUND-36, w:54, h:36, vx:0.85, min:2380, max:2550, dead:false, kind:"walk"},
     {x:4000, y:180, w:54, h:36, vx:0, min:0, max:0, dead:false, kind:"hop", hop:0}
   ];
   stars = [
     {x:1220, y:190, got:false, q:0},
-    {x:3210, y:258, got:false, q:1},
+    {x:2340, y:240, got:false, q:1},
     {x:4140, y:180, got:false, q:2}
   ];
   flag = {x:5320, y:GROUND-150, w:70, h:150};
