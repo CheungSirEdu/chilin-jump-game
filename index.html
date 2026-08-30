@@ -187,15 +187,14 @@ function layout() {
     plat(1180, 250, 160, 22, {kind:"metal"}), // star 1
     plat(1380, GROUND, 40, 220, {kind:"metal"}),
 
-    // —— 推力區：彈床、輸送帶、移動台 ——
-    plat(1600, GROUND, 380, 220, {kind:"wood"}),
-    plat(1760, GROUND-8, 160, 16, {kind:"bounce"}),
-    plat(2040, GROUND, 260, 220, {kind:"wood"}),
-    plat(2040, GROUND-8, 180, 16, {kind:"belt", belt:2.6}),
-    plat(2220, GROUND-8, 80, 16, {kind:"bounce"}),
-    plat(2400, 430, 160, 24, {kind:"wood", mx:[2360, 2920], mvx:2.2}),
-    plat(3040, GROUND, 280, 220, {kind:"wood"}),
-    plat(3160, 300, 140, 24, {kind:"wood"}), // star 2
+    // —— 推力區：彈床只係彈高；過河用慢而近嘅移動台 ——
+    plat(1600, GROUND, 500, 220, {kind:"wood"}),
+    plat(1860, 508, 140, 24, {kind:"bounce"}),
+    plat(2128, 430, 220, 26, {kind:"wood", mx:[2096, 2560], mvx:1.15}),
+    plat(2760, GROUND, 520, 220, {kind:"wood"}),
+    plat(2760, GROUND-8, 160, 16, {kind:"belt", belt:1.4}),
+    plat(3000, 430, 130, 24, {kind:"wood"}),
+    plat(3160, 318, 170, 24, {kind:"wood"}), // star 2
 
     // —— 地心吸力區：浮台會塌、高空跳 ——
     plat(3480, 460, 130, 24, {kind:"cloud", crumb:true}),
@@ -206,18 +205,17 @@ function layout() {
     plat(4520, GROUND, 1080, 220),
     {x:4680, y:GROUND-140, w:62, h:140, kind:"pipe"},
     plat(4860, 390, 120, 24),
-    plat(5040, GROUND-8, 140, 16, {kind:"bounce"})
+    plat(5040, 508, 140, 22, {kind:"bounce"})
   ];
   enemies = [
     {x:250, y:GROUND-36, w:54, h:36, vx:0.9, min:80, max:500, dead:false, kind:"walk"},
     {x:1000, y:GROUND-36, w:54, h:36, vx:1.1, min:880, max:1400, dead:false, kind:"walk"},
-    {x:2100, y:GROUND-36, w:54, h:36, vx:1.4, min:2050, max:2240, dead:false, kind:"walk"},
-    {x:3180, y:264, w:54, h:36, vx:0.8, min:3160, max:3280, dead:false, kind:"walk"},
+    {x:3300, y:GROUND-36, w:54, h:36, vx:0.8, min:2940, max:3240, dead:false, kind:"walk"},
     {x:4000, y:180, w:54, h:36, vx:0, min:0, max:0, dead:false, kind:"hop", hop:0}
   ];
   stars = [
     {x:1220, y:190, got:false, q:0},
-    {x:3190, y:240, got:false, q:1},
+    {x:3210, y:258, got:false, q:1},
     {x:4140, y:180, got:false, q:2}
   ];
   flag = {x:5320, y:GROUND-150, w:70, h:150};
@@ -236,7 +234,7 @@ function layout() {
 function resetPlay() {
   layout();
   collected = 0;
-  player = {x:140, y:GROUND-PH, w:PW, h:PH, vx:0, vy:0, onG:false, dir:1, alive:true, stand:null};
+  player = {x:140, y:GROUND-PH, w:PW, h:PH, vx:0, vy:0, onG:false, dir:1, alive:true, stand:null, bounceLock:0};
   camX = 0;
   quizId = null;
   state = "play";
@@ -257,27 +255,52 @@ function zoneName(x){
   return "終點發明坊";
 }
 
-function hitSolids(axis) {
+function hitSolidsX() {
   const box = {x:player.x, y:player.y, w:player.w, h:player.h};
   for (const s of solids) {
-    if (s.fallen) continue;
+    if (s.fallen || s.kind === "bounce") continue;
     if (!aabb(box, s)) continue;
-    if (axis === "x") {
-      if (player.vx > 0) player.x = s.x - player.w;
-      else if (player.vx < 0) player.x = s.x + s.w;
-      player.vx = 0;
-    } else {
-      if (player.vy > 0) {
-        player.y = s.y - player.h;
+    if (player.vx > 0) player.x = s.x - player.w;
+    else if (player.vx < 0) player.x = s.x + s.w;
+    player.vx = 0;
+  }
+}
+
+function hitSolidsY() {
+  const prevBottom = player._py + player.h;
+  const prevTop = player._py;
+  let best = null;
+  for (const s of solids) {
+    if (s.fallen) continue;
+    if (player.x + player.w <= s.x + 2 || player.x >= s.x + s.w - 2) continue;
+    if (player.vy >= 0 && prevBottom <= s.y + 8 && player.y + player.h >= s.y) {
+      if (!best || s.y < best.y) best = s;
+    } else if (player.vy < 0 && s.kind !== "bounce" && prevTop >= s.y + s.h - 8 && player.y <= s.y + s.h) {
+      player.y = s.y + s.h;
+      player.vy = 0;
+    }
+  }
+  if (best) {
+    player.y = best.y - player.h;
+    if (best.kind === "bounce") {
+      if (player.bounceLock <= 0) {
+        const holdJump = keys.ArrowUp || keys[" "] || keys.w || keys.W || hold.jump;
+        player.vy = holdJump ? -16 : -13.5;
+        player.bounceLock = 14;
+      } else {
         player.vy = 0;
         player.onG = true;
-        player.stand = s;
-        if (s.kind === "bounce") player.vy = -16.5, player.onG = false;
-        if (s.crumb && !s.shake) s.shake = 1;
-      } else if (player.vy < 0) {
-        player.y = s.y + s.h;
-        player.vy = 0;
+        player.stand = best;
       }
+      if (player.vy < 0) {
+        player.onG = false;
+        player.stand = null;
+      }
+    } else {
+      player.vy = 0;
+      player.onG = true;
+      player.stand = best;
+      if (best.crumb && !best.shake) best.shake = 1;
     }
   }
 }
@@ -349,19 +372,22 @@ function step() {
   if (left) { player.vx = -SPEED; player.dir = -1; }
   if (right) { player.vx = SPEED; player.dir = 1; }
 
+  if (player.bounceLock > 0) player.bounceLock--;
+
   if (jump && player.onG) { player.vy = JUMP; player.onG = false; player.stand = null; }
 
+  player._px = player.x;
+  player._py = player.y;
   player.x += player.vx;
-  hitSolids("x");
+  hitSolidsX();
 
   player.vy += G;
   player.y += player.vy;
   player.onG = false;
-  const was = player.stand;
   player.stand = null;
-  hitSolids("y");
+  hitSolidsY();
   if (player.stand) {
-    player.x += player.stand.x - player.stand._ox;
+    player.x += (player.stand.x - (player.stand._ox || player.stand.x));
     if (player.stand.belt) player.x += player.stand.belt;
   }
 
