@@ -97,7 +97,7 @@
     <div class="panel" id="start">
       <div class="card">
         <h1>小小發明家跳跳關</h1>
-        <p class="lead">共五關：草地、磁石、推力、地心吸力、小小發明家。<br>吃星星要答二年級科學題。每關限時50秒，逾時只重玩本關。</p>
+        <p class="lead">共五關：草地、磁石、推力、地心吸力、小小發明家。<br>吃星星會按課題隨機抽出二年級科學題。每關限時50秒。</p>
         <div class="chars">
           <button class="char-btn" id="pickBoy" type="button"><img src="assets/boy.png" alt="小志" />小志</button>
           <button class="char-btn" id="pickGirl" type="button"><img src="assets/girl.png" alt="小蓮" />小蓮</button>
@@ -146,15 +146,55 @@ function en(x, min, max, extra){
   return Object.assign({x, y:GROUND-36, w:54, h:36, vx:0.9, min, max, dead:false, kind:"walk"}, extra||{});
 }
 
+const QUESTION_BANK = {
+  life: [
+    { q: "下列哪一項是生物？", right: "小狗", wrong: ["石頭", "桌子", "水杯"] },
+    { q: "植物生長通常需要什麼？", right: "陽光、空氣和水", wrong: ["只有石頭", "只有塑膠", "完全不需要東西"] },
+    { q: "下列哪一項是非生物？", right: "石頭", wrong: ["小貓", "小草", "金魚"] },
+    { q: "動物和植物相同的地方是：", right: "都是有生命的", wrong: ["都會走路", "都會說話", "都是石頭做的"] },
+    { q: "種子要發芽，通常需要什麼？", right: "適量的水和空氣", wrong: ["只需要玩具", "完全不澆水", "長期放進冰格"] },
+    { q: "下列哪一種做法可以愛護環境？", right: "把廢物分類放進回收箱", wrong: ["把垃圾丟進河裡", "攀折公園的花", "捕捉小動物後不放回"] }
+  ],
+  magnet: [
+    { q: "磁石最容易吸起哪一種物品？", right: "鐵釘", wrong: ["膠尺", "木塊", "白紙"] },
+    { q: "兩塊磁石的相同磁極靠近時，通常會怎樣？", right: "互相推開", wrong: ["一定黏在一起", "發出很大的聲音", "變成水"] },
+    { q: "兩塊磁石的不同磁極靠近時，通常會怎樣？", right: "互相吸引", wrong: ["一定互相推開", "立刻熔化", "變成塑膠"] },
+    { q: "下列哪一項通常不會被磁石吸住？", right: "膠尺", wrong: ["鐵釘", "迴紋針", "鐵製剪刀"] },
+    { q: "磁石隔着薄紙仍能吸起迴紋針，這說明：", right: "磁力可以穿過一些物料", wrong: ["紙變成了鐵", "磁石失去磁力", "迴紋針自己會飛"] },
+    { q: "指南針能夠指出南北，主要是因為：", right: "指針是磁石，會受地磁影響", wrong: ["指針會發光", "指針有香味", "指針怕水"] }
+  ],
+  force: [
+    { q: "小朋友把箱子推向遠處。這是哪一種力？", right: "推力", wrong: ["拉力", "浮力", "電力"] },
+    { q: "用力把一扇門拉開，這是哪一種力？", right: "拉力", wrong: ["推力", "電力", "浮力"] },
+    { q: "把一輛玩具車拉到自己面前，這是哪一種力？", right: "拉力", wrong: ["推力", "磁力", "電力"] },
+    { q: "推或拉一件物品，通常可以使它：", right: "開始移動、停下或改變形狀", wrong: ["變成食物", "自己發出香味", "自己長大"] },
+    { q: "要把卡在抽屜裡的書本抽出來，主要用哪一種力？", right: "拉力", wrong: ["浮力", "電力", "聲音"] },
+    { q: "把黏土壓扁，主要是在：", right: "用力改變它的形狀", wrong: ["把黏土變成鐵", "用磁力吸扁它", "用聲音壓扁它"] }
+  ],
+  gravity: [
+    { q: "把球拋向天空，球會掉下來，主要是因為：", right: "地心吸力", wrong: ["風力", "磁力", "聲音"] },
+    { q: "我們站在地上不會飄走，主要是因為：", right: "地心吸力把我們拉向地面", wrong: ["風把我們吹住", "聲音拉住我們", "顏色黏住我們"] },
+    { q: "把橡皮擦從桌上鬆手，它通常會：", right: "掉到地上", wrong: ["飛上天", "停在半空", "變成水"] },
+    { q: "地心吸力把物體拉向哪裡？", right: "地面", wrong: ["月亮", "課室的電燈", "書包"] },
+    { q: "在地球上把蘋果鬆手後，蘋果會：", right: "向下掉", wrong: ["向左飛走", "停在原處", "慢慢變大"] },
+    { q: "雨會從天上落下來，主要是因為：", right: "地心吸力把雨拉向地面", wrong: ["雨怕熱", "雲把雨推進學校", "聲音把雨叫下來"] }
+  ],
+  invent: [
+    { q: "小小發明家設計作品時，第一步應該：", right: "想清楚要解決甚麼問題", wrong: ["立刻塗顏色", "把材料丟掉", "只看別人的作品，自己不試"] },
+    { q: "做完作品後，怎樣做才可以改進？", right: "試用並觀察有沒有問題", wrong: ["立刻丟掉", "不再理會", "把說明書藏起來"] },
+    { q: "動手做發明之前，較好的做法是：", right: "先想辦法或畫簡單設計圖", wrong: ["把材料全部丟掉", "不肯動腦筋", "甚麼都不觀察"] },
+    { q: "測試作品時發現車輪轉不動，應該怎樣？", right: "找出問題並改良", wrong: ["立刻放棄", "把作品藏起來", "只怪別人"] },
+    { q: "「奇思妙想」最接近的意思是：", right: "大膽想出新的解決辦法", wrong: ["抄完以後不再想", "把舊玩具扔掉不管", "不觀察四周"] },
+    { q: "做小發明時選擇材料，最應該先考慮：", right: "材料是否安全和合適", wrong: ["包裝是否最大", "只選最貴的", "只選最重的石頭"] }
+  ]
+};
+
 const LEVELS = [
   {
     name: "第1關　出發草地",
     sky: ["#7ec8e3","#d7f3c8"],
     worldW: 2300,
-    questions: [
-      { q: "下列哪一項是生物？", right: "小狗", wrong: ["石頭", "桌子", "水杯"] },
-      { q: "植物生長通常需要什麼？", right: "陽光、空氣和水", wrong: ["只有石頭", "只有塑膠", "完全不需要東西"] }
-    ],
+    topic: "life",
     build() {
       return {
         solids: [
@@ -177,10 +217,7 @@ const LEVELS = [
     name: "第2關　磁石世界",
     sky: ["#9bb8d4","#d5e4ef"],
     worldW: 2500,
-    questions: [
-      { q: "磁石最容易吸起哪一種物品？", right: "鐵釘", wrong: ["膠尺", "木塊", "白紙"] },
-      { q: "兩塊磁石的相同磁極靠近時，通常會怎樣？", right: "互相推開", wrong: ["一定黏在一起", "發出很大的聲音", "變成水"] }
-    ],
+    topic: "magnet",
     build() {
       return {
         solids: [
@@ -204,10 +241,7 @@ const LEVELS = [
     name: "第3關　推力工場",
     sky: ["#f0c27a","#f6e2b3"],
     worldW: 2500,
-    questions: [
-      { q: "小朋友把箱子推向遠處。這是哪一種力？", right: "推力", wrong: ["拉力", "浮力", "電力"] },
-      { q: "用力把一扇門拉開，這是哪一種力？", right: "拉力", wrong: ["推力", "電力", "浮力"] }
-    ],
+    topic: "force",
     build() {
       return {
         solids: [
@@ -231,10 +265,7 @@ const LEVELS = [
     name: "第4關　地心吸力",
     sky: ["#b9c7f0","#e4e9ff"],
     worldW: 2600,
-    questions: [
-      { q: "把球拋向天空，球會掉下來，主要是因為：", right: "地心吸力", wrong: ["風力", "磁力", "聲音"] },
-      { q: "我們站在地上不會飄走，主要是因為：", right: "地心吸力把我們拉向地面", wrong: ["風把我們吹住", "聲音拉住我們", "顏色黏住我們"] }
-    ],
+    topic: "gravity",
     build() {
       return {
         solids: [
@@ -262,10 +293,7 @@ const LEVELS = [
     name: "第5關　小小發明家",
     sky: ["#c9e7a8","#fff3b0"],
     worldW: 2700,
-    questions: [
-      { q: "小小發明家設計作品時，第一步應該：", right: "想清楚要解決甚麼問題", wrong: ["立刻塗顏色", "把材料丟掉", "只看別人的作品，自己不試"] },
-      { q: "做完作品後，怎樣做才可以改進？", right: "試用並觀察有沒有問題", wrong: ["立刻丟掉", "不再理會", "把說明書藏起來"] }
-    ],
+    topic: "invent",
     build() {
       return {
         solids: [
@@ -302,6 +330,7 @@ let player, enemies, stars, solids, flag, collected, decos;
 let levelIndex = 0;
 let lastAnswerSlot = -1;
 let liveQuestions = [];
+let levelQs = [];
 let maxCleared = 0;
 let wonAll = false;
 let timeLeft = LEVEL_SECS;
@@ -312,6 +341,19 @@ function loadSave() {
 }
 function writeSave() {
   localStorage.setItem(SAVE, JSON.stringify({ maxCleared, hero }));
+}
+
+function shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickLevelQuestions(topic, n) {
+  return shuffleArr(QUESTION_BANK[topic]).slice(0, n);
 }
 
 function shuffleQuestion(bank) {
@@ -344,6 +386,7 @@ function startLevel(i) {
   levelIndex = i;
   lastAnswerSlot = -1;
   liveQuestions = [];
+  levelQs = pickLevelQuestions(LEVELS[i].topic, 2);
   collected = 0;
   wonAll = false;
   layout();
@@ -449,7 +492,7 @@ function openQuiz(qid) {
   quizId = qid;
   state = "quiz";
   if (player && player.stand && player.stand.crumb) player.stand.shake = 0;
-  const Q = liveQuestions[qid] = shuffleQuestion(LEVELS[levelIndex].questions[qid]);
+  const Q = liveQuestions[qid] = shuffleQuestion(levelQs[qid]);
   document.getElementById("qtext").textContent = "科學題：" + Q.q;
   const box = document.getElementById("qopts");
   box.innerHTML = "";
