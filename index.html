@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="小小發明家跳跳關" />
+  <title>小小發明家跳跳關</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --green:#2f7d32; --yellow:#f4d35e; --ink:#1d2b1f; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; height: 100%; overflow: hidden; background: #7ec8e3;
+      font-family: "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif;
+      color: var(--ink); touch-action: none; user-select: none;
+    }
+    #wrap { position: relative; width: 100%; height: 100%; }
+    canvas { display: block; width: 100%; height: 100%; background: #7ec8e3; }
+    .panel {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(#8fd3f0, #c8f0c0); padding: 16px; z-index: 5;
+    }
+    .card {
+      background: #fffef6; border: 6px solid #2f7d32; border-radius: 28px;
+      padding: 22px 22px 18px; max-width: 560px; width: 100%;
+      box-shadow: 0 10px 0 #1b5e20;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; text-align: center; color: #1b5e20; }
+    p.lead { text-align: center; margin: 0 0 16px; font-size: 16px; line-height: 1.5; }
+    .chars { display: flex; gap: 12px; justify-content: center; margin-bottom: 16px; }
+    .char-btn {
+      flex: 1; border: 4px solid #c5dcc6; background: #fff; border-radius: 20px;
+      padding: 10px; cursor: pointer; font: inherit; font-weight: 700;
+    }
+    .char-btn img { width: 100%; max-height: 160px; object-fit: contain; display: block; }
+    .char-btn.pick { border-color: #2f7d32; background: #e8f6e9; box-shadow: 0 0 0 3px #f4d35e; }
+    .primary {
+      width: 100%; border: 0; background: #2f7d32; color: #fff; font: inherit;
+      font-weight: 900; font-size: 20px; padding: 14px; border-radius: 16px; cursor: pointer;
+    }
+    .primary:disabled { background: #9aaa9b; }
+    .hud {
+      position: absolute; top: 10px; left: 12px; right: 12px; z-index: 3;
+      display: flex; justify-content: space-between; align-items: center;
+      pointer-events: none; text-shadow: 0 2px 0 rgba(0,0,0,.25);
+      color: #fff; font-weight: 900; font-size: 18px;
+    }
+    .hud span { background: rgba(0,0,0,.28); padding: 4px 10px; border-radius: 12px; }
+    .controls {
+      position: absolute; left: 0; right: 0; bottom: 12px; z-index: 4;
+      display: flex; justify-content: space-between; padding: 0 16px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .pad, .jump {
+      display: flex; gap: 10px;
+    }
+    .ctrl {
+      width: 74px; height: 74px; border-radius: 18px; border: 0;
+      background: rgba(255,255,255,.55); color: #1b5e20; font-size: 32px; font-weight: 900;
+      box-shadow: 0 4px 0 rgba(0,0,0,.15);
+    }
+    .jump .ctrl { width: 96px; height: 74px; background: rgba(244,211,94,.85); }
+    #quiz {
+      position: absolute; inset: 0; background: rgba(20,40,20,.55);
+      display: none; align-items: center; justify-content: center; z-index: 6; padding: 16px;
+    }
+    #quiz.show { display: flex; }
+    .qcard { background: #fffef6; border-radius: 24px; border: 6px solid #f4d35e; padding: 18px; max-width: 560px; width: 100%; }
+    .qcard h2 { margin: 0 0 12px; font-size: 20px; }
+    .opt {
+      display: block; width: 100%; text-align: left; margin: 8px 0; padding: 12px 14px;
+      border-radius: 14px; border: 3px solid #c5dcc6; background: #fff; font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .opt:active { background: #e8f6e9; }
+    .hidden { display: none !important; }
+    .hint { font-size: 13px; text-align: center; color: #3d5c40; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <div class="hud" id="hud"><span id="hudZone"></span><span id="hudStar"></span></div>
+    <div class="controls" id="controls">
+      <div class="pad">
+        <button class="ctrl" data-k="left">←</button>
+        <button class="ctrl" data-k="right">→</button>
+      </div>
+      <div class="jump">
+        <button class="ctrl" data-k="jump">跳</button>
+      </div>
+    </div>
+
+    <div class="panel" id="start">
+      <div class="card">
+        <h1>小小發明家跳跳關</h1>
+        <p class="lead">選一位志蓮小學生去闖三個不同的科學區：磁石、推力、地心吸力。<br>吃到星星要答題；答錯會重新開始。</p>
+        <div class="chars">
+          <button class="char-btn" id="pickBoy" type="button"><img src="assets/boy.png" alt="小志" />小志</button>
+          <button class="char-btn" id="pickGirl" type="button"><img src="assets/girl.png" alt="小蓮" />小蓮</button>
+        </div>
+        <button class="primary" id="go" disabled>開始試玩</button>
+        <p class="hint">電腦：← → 行走，↑ 或空白鍵跳躍　｜　平板／電話：用畫面按鈕</p>
+        <div id="shareBox" class="hint" style="margin-top:14px;padding:10px;background:#eef7ee;border-radius:12px;display:none">
+          <b>iPad／電話玩法</b><br>
+          1. 同呢部 Mac 連<strong>同一個 Wi‑Fi</strong>（唔好用流動數據）<br>
+          2. 打開 Safari，輸入：<br>
+          <span id="shareUrl" style="font-size:16px;color:#1b5e20;word-break:break-all"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="end">
+      <div class="card">
+        <h1 id="endTitle">完成！</h1>
+        <p class="lead" id="endMsg"></p>
+        <button class="primary" id="again">再玩一次</button>
+      </div>
+    </div>
+
+    <div id="quiz">
+      <div class="qcard">
+        <h2 id="qtext"></h2>
+        <div id="qopts"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const IMAGES = {};
+const loadImg = src => new Promise((res, rej) => {
+  const i = new Image();
+  i.onload = () => res(i);
+  i.onerror = rej;
+  i.src = src;
+});
+
+const QUESTIONS = [
+  {
+    q: "磁石最容易吸起哪一種物品？",
+    opts: ["鐵釘", "膠尺", "木塊", "白紙"],
+    a: 0
+  },
+  {
+    q: "小朋友把箱子推向遠處。這是哪一種力？",
+    opts: ["推力", "拉力", "浮力", "電力"],
+    a: 0
+  },
+  {
+    q: "把球拋向天空，球會掉下來，主要是因為：",
+    opts: ["地心吸力", "風力", "磁力", "聲音"],
+    a: 0
+  }
+];
+
+const WORLD_W = 5600;
+const GROUND = 560;
+const PW = 54, PH = 82;
+const G = 0.62, JUMP = -13.2, SPEED = 4.6;
+
+let canvas, ctx, W, H;
+let keys = {};
+let hold = { left:false, right:false, jump:false };
+let hero = "boy";
+let state = "menu";
+let quizId = null;
+let camX = 0;
+let t = 0;
+let player, enemies, stars, solids, flag, collected, decos;
+
+function plat(x,y,w,h, extra){ return Object.assign({x,y,w,h, kind:"grass"}, extra||{}); }
+
+function layout() {
+  solids = [
+    // —— 草地教學 ——
+    plat(0, GROUND, 720, 220),
+    plat(180, 430, 140, 26),
+    plat(360, 340, 90, 26),
+    {x:560, y:GROUND-108, w:58, h:108, kind:"pipe"},
+
+    // —— 磁石區：鐵梯、灰色金屬台 ——
+    plat(860, GROUND, 620, 220, {kind:"metal"}),
+    plat(900, 470, 90, 22, {kind:"metal"}),
+    plat(990, 400, 90, 22, {kind:"metal"}),
+    plat(1080, 330, 90, 22, {kind:"metal"}),
+    plat(1180, 250, 160, 22, {kind:"metal"}), // star 1
+    plat(1380, GROUND, 40, 220, {kind:"metal"}),
+
+    // —— 推力區：彈床、輸送帶、移動台 ——
+    plat(1600, GROUND, 380, 220, {kind:"wood"}),
+    plat(1760, GROUND-8, 160, 16, {kind:"bounce"}),
+    plat(2040, GROUND, 260, 220, {kind:"wood"}),
+    plat(2040, GROUND-8, 180, 16, {kind:"belt", belt:2.6}),
+    plat(2220, GROUND-8, 80, 16, {kind:"bounce"}),
+    plat(2400, 430, 160, 24, {kind:"wood", mx:[2360, 2920], mvx:2.2}),
+    plat(3040, GROUND, 280, 220, {kind:"wood"}),
+    plat(3160, 300, 140, 24, {kind:"wood"}), // star 2
+
+    // —— 地心吸力區：浮台會塌、高空跳 ——
+    plat(3480, 460, 130, 24, {kind:"cloud", crumb:true}),
+    plat(3680, 380, 120, 24, {kind:"cloud", crumb:true}),
+    plat(3880, 300, 120, 24, {kind:"cloud", crumb:true}),
+    plat(4100, 240, 150, 24, {kind:"cloud"}), // star 3
+    plat(4320, 360, 110, 24, {kind:"cloud", crumb:true}),
+    plat(4520, GROUND, 1080, 220),
+    {x:4680, y:GROUND-140, w:62, h:140, kind:"pipe"},
+    plat(4860, 390, 120, 24),
+    plat(5040, GROUND-8, 140, 16, {kind:"bounce"})
+  ];
+  enemies = [
+    {x:250, y:GROUND-36, w:54, h:36, vx:0.9, min:80, max:500, dead:false, kind:"walk"},
+    {x:1000, y:GROUND-36, w:54, h:36, vx:1.1, min:880, max:1400, dead:false, kind:"walk"},
+    {x:2100, y:GROUND-36, w:54, h:36, vx:1.4, min:2050, max:2240, dead:false, kind:"walk"},
+    {x:3180, y:264, w:54, h:36, vx:0.8, min:3160, max:3280, dead:false, kind:"walk"},
+    {x:4000, y:180, w:54, h:36, vx:0, min:0, max:0, dead:false, kind:"hop", hop:0}
+  ];
+  stars = [
+    {x:1220, y:190, got:false, q:0},
+    {x:3190, y:240, got:false, q:1},
+    {x:4140, y:180, got:false, q:2}
+  ];
+  flag = {x:5320, y:GROUND-150, w:70, h:150};
+  decos = [
+    {k:"sign", x:80, y:GROUND-70, t:"出發"},
+    {k:"sign", x:820, y:GROUND-70, t:"磁石區"},
+    {k:"sign", x:1620, y:GROUND-70, t:"推力區"},
+    {k:"sign", x:3400, y:GROUND-70, t:"地心吸力"},
+    {k:"hill", x:200, y:GROUND, c:"#6bb36a"},
+    {k:"hill", x:1100, y:GROUND, c:"#7aa0b8"},
+    {k:"hill", x:2500, y:GROUND, c:"#c9a06a"},
+    {k:"hill", x:4200, y:GROUND, c:"#8ec4e6"}
+  ];
+}
+
+function resetPlay() {
+  layout();
+  collected = 0;
+  player = {x:140, y:GROUND-PH, w:PW, h:PH, vx:0, vy:0, onG:false, dir:1, alive:true, stand:null};
+  camX = 0;
+  quizId = null;
+  state = "play";
+  document.getElementById("quiz").classList.remove("show");
+  document.getElementById("end").classList.add("hidden");
+  document.getElementById("start").classList.add("hidden");
+}
+
+function aabb(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function zoneName(x){
+  if (x < 820) return "出發草地";
+  if (x < 1600) return "磁石區";
+  if (x < 3400) return "推力區";
+  if (x < 4520) return "地心吸力區";
+  return "終點發明坊";
+}
+
+function hitSolids(axis) {
+  const box = {x:player.x, y:player.y, w:player.w, h:player.h};
+  for (const s of solids) {
+    if (s.fallen) continue;
+    if (!aabb(box, s)) continue;
+    if (axis === "x") {
+      if (player.vx > 0) player.x = s.x - player.w;
+      else if (player.vx < 0) player.x = s.x + s.w;
+      player.vx = 0;
+    } else {
+      if (player.vy > 0) {
+        player.y = s.y - player.h;
+        player.vy = 0;
+        player.onG = true;
+        player.stand = s;
+        if (s.kind === "bounce") player.vy = -16.5, player.onG = false;
+        if (s.crumb && !s.shake) s.shake = 1;
+      } else if (player.vy < 0) {
+        player.y = s.y + s.h;
+        player.vy = 0;
+      }
+    }
+  }
+}
+
+function die(reason) {
+  state = "lose";
+  document.getElementById("endTitle").textContent = "要重新開始";
+  document.getElementById("endMsg").innerHTML = reason + "<br>答錯題目或碰到小蟲、掉進洞，都要由起點再走。";
+  document.getElementById("end").classList.remove("hidden");
+}
+
+function win() {
+  state = "win";
+  document.getElementById("endTitle").textContent = "到達終點！";
+  document.getElementById("endMsg").textContent = "你已答對三條二年級科學題，完成試玩關。";
+  document.getElementById("end").classList.remove("hidden");
+}
+
+function openQuiz(qid) {
+  quizId = qid;
+  state = "quiz";
+  const Q = QUESTIONS[qid];
+  document.getElementById("qtext").textContent = "科學題：" + Q.q;
+  const box = document.getElementById("qopts");
+  box.innerHTML = "";
+  Q.opts.forEach((t, i) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = String.fromCharCode(65+i) + ".  " + t;
+    b.onclick = () => answer(i);
+    box.appendChild(b);
+  });
+  document.getElementById("quiz").classList.add("show");
+}
+
+function answer(i) {
+  const Q = QUESTIONS[quizId];
+  document.getElementById("quiz").classList.remove("show");
+  if (i === Q.a) {
+    collected++;
+    state = "play";
+    quizId = null;
+  } else {
+    die("這題答錯了。正確答案是：「" + Q.opts[Q.a] + "」。");
+  }
+}
+
+function step() {
+  if (state !== "play") return;
+  t++;
+  const left = keys.ArrowLeft || keys.a || keys.A || hold.left;
+  const right = keys.ArrowRight || keys.d || keys.D || hold.right;
+  const jump = keys.ArrowUp || keys[" "] || keys.w || keys.W || hold.jump;
+
+  // 移動台／塌台
+  for (const s of solids) {
+    s._ox = s.x; s._oy = s.y;
+    if (s.mx) {
+      s.x += s.mvx;
+      if (s.x < s.mx[0] || s.x > s.mx[1]) s.mvx *= -1;
+    }
+    if (s.shake) {
+      s.shake++;
+      if (s.shake > 28) { s.fallen = true; s.shake = 0; s.y += 400; }
+    }
+  }
+
+  player.vx = 0;
+  if (left) { player.vx = -SPEED; player.dir = -1; }
+  if (right) { player.vx = SPEED; player.dir = 1; }
+
+  if (jump && player.onG) { player.vy = JUMP; player.onG = false; player.stand = null; }
+
+  player.x += player.vx;
+  hitSolids("x");
+
+  player.vy += G;
+  player.y += player.vy;
+  player.onG = false;
+  const was = player.stand;
+  player.stand = null;
+  hitSolids("y");
+  if (player.stand) {
+    player.x += player.stand.x - player.stand._ox;
+    if (player.stand.belt) player.x += player.stand.belt;
+  }
+
+  if (player.x < 8) player.x = 8;
+  if (player.x > WORLD_W - player.w - 8) player.x = WORLD_W - player.w - 8;
+  if (player.y > GROUND + 200) { die("掉進洞裏了。"); return; }
+
+  const pb = {x:player.x+6, y:player.y+8, w:player.w-12, h:player.h-8};
+
+  for (const e of enemies) {
+    if (e.dead) continue;
+    if (e.kind === "hop") {
+      e.hop = (e.hop||0) + 1;
+      if (e.hop === 1) e._gy = e.y;
+      if (!e.vy) e.vy = 0;
+      e.vy += 0.45;
+      e.y += e.vy;
+      if (e.y > e._gy) { e.y = e._gy; e.vy = 0; }
+      if (e.hop % 70 === 0) e.vy = -9;
+    } else {
+      e.x += e.vx;
+      if (e.x < e.min || e.x > e.max) e.vx *= -1;
+    }
+    const eb = {x:e.x, y:e.y, w:e.w, h:e.h};
+    if (!aabb(pb, eb)) continue;
+    if (player.vy > 0 && player.y + player.h - e.y < 24) {
+      e.dead = true;
+      player.vy = -8;
+    } else {
+      die("碰到小蟲了。用腳從上面踩下去才安全。");
+      return;
+    }
+  }
+
+  for (const s of stars) {
+    if (s.got) continue;
+    const sb = {x:s.x, y:s.y, w:40, h:40};
+    if (aabb(pb, sb)) {
+      s.got = true;
+      openQuiz(s.q);
+      return;
+    }
+  }
+
+  if (collected >= 3 && aabb(pb, {x:flag.x, y:flag.y, w:flag.w, h:flag.h})) {
+    win();
+  }
+
+  camX = Math.max(0, Math.min(WORLD_W - W, player.x - W*0.35));
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function lerpC(a,b,p){
+  const pa=parseInt(a.slice(1),16), pb=parseInt(b.slice(1),16);
+  const r=(pa>>16)*(1-p)+((pb>>16)*p), g=((pa>>8)&255)*(1-p)+(((pb>>8)&255)*p), bl=(pa&255)*(1-p)+((pb&255)*p);
+  return `rgb(${r|0},${g|0},${bl|0})`;
+}
+function zoneSky(x){
+  if (x < 820) return ["#7ec8e3","#d7f3c8"];
+  if (x < 1600) return ["#9bb8d4","#d5e4ef"];
+  if (x < 3400) return ["#f0c27a","#f6e2b3"];
+  if (x < 4520) return ["#b9c7f0","#e4e9ff"];
+  return ["#c9e7a8","#fff3b0"];
+}
+function drawSky() {
+  const [c0,c1] = zoneSky(player ? player.x : 0);
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, c0);
+  g.addColorStop(1, c1);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = "rgba(255,255,255,.82)";
+  for (const c of [[180,70,55],[620,48,78],[1280,88,48],[2100,40,70],[2900,76,52],[3700,50,64],[4600,70,58],[5300,42,50]]) {
+    const x = c[0] - camX*0.45;
+    ctx.beginPath();
+    ctx.arc(x, c[1], c[2], 0, Math.PI*2);
+    ctx.arc(x+38, c[1]+8, c[2]*0.7, 0, Math.PI*2);
+    ctx.arc(x-34, c[1]+10, c[2]*0.55, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawSolid(s){
+  if (s.fallen) return;
+  const jx = s.shake ? Math.sin(s.shake)*3 : 0;
+  const x = s.x + jx;
+  if (s.kind === "pipe") {
+    ctx.fillStyle = "#2e9c3a";
+    ctx.fillRect(x+7, s.y+18, s.w-14, s.h-18);
+    ctx.fillStyle = "#43b64c";
+    ctx.fillRect(x, s.y, s.w, 22);
+    ctx.strokeStyle = "#1b5e20"; ctx.lineWidth = 3;
+    ctx.strokeRect(x, s.y, s.w, 22);
+    return;
+  }
+  let top, body;
+  if (s.kind === "metal") { top="#8aa0b8"; body="#5d7186"; }
+  else if (s.kind === "wood") { top="#d2a15a"; body="#a06a32"; }
+  else if (s.kind === "bounce") { top="#ff6b6b"; body="#c44545"; }
+  else if (s.kind === "belt") { top="#f4d35e"; body="#c9a227"; }
+  else if (s.kind === "cloud") { top="#ffffff"; body="#dbe7ff"; }
+  else { top="#7bc45b"; body="#c48a4a"; }
+  ctx.fillStyle = body;
+  ctx.fillRect(x, s.y+10, s.w, Math.max(s.h-10, 12));
+  ctx.fillStyle = top;
+  ctx.fillRect(x, s.y, s.w, 14);
+  if (s.kind === "bounce") {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(x+8, s.y+4, s.w-16, 5);
+  }
+  if (s.kind === "belt") {
+    ctx.fillStyle = "#2f7d32";
+    for (let i=0;i<s.w;i+=22) ctx.fillRect(x+((t*2+i)%s.w), s.y+3, 10, 6);
+  }
+  if (s.kind === "metal") {
+    ctx.fillStyle = "rgba(255,255,255,.35)";
+    ctx.fillRect(x+6, s.y+3, 18, 6);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  ctx.save();
+  ctx.translate(-camX, 0);
+
+  for (const d of decos) {
+    if (d.k === "hill") {
+      ctx.fillStyle = d.c;
+      ctx.beginPath();
+      ctx.ellipse(d.x, d.y+10, 160, 70, 0, Math.PI, 0);
+      ctx.fill();
+    }
+    if (d.k === "sign") {
+      ctx.fillStyle = "#8d5a2b";
+      ctx.fillRect(d.x+28, d.y+22, 8, 48);
+      ctx.fillStyle = "#fff8dc";
+      ctx.fillRect(d.x, d.y, 64, 30);
+      ctx.strokeStyle = "#5a3a18"; ctx.lineWidth = 2;
+      ctx.strokeRect(d.x, d.y, 64, 30);
+      ctx.fillStyle = "#3a2a10";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(d.t, d.x+32, d.y+20);
+    }
+  }
+
+  for (const s of solids) drawSolid(s);
+
+  if (IMAGES.flag) ctx.drawImage(IMAGES.flag, flag.x, flag.y, 86, 150);
+
+  for (const s of stars) {
+    if (s.got) continue;
+    const bob = Math.sin(t/12 + s.x)*6;
+    ctx.drawImage(IMAGES.star, s.x, s.y + bob, 44, 44);
+  }
+
+  for (const e of enemies) {
+    if (e.dead) continue;
+    ctx.save();
+    const flip = e.vx < 0;
+    if (flip) { ctx.translate(e.x + e.w, e.y); ctx.scale(-1,1); ctx.drawImage(IMAGES.enemy, 0, 0, e.w, e.h); }
+    else ctx.drawImage(IMAGES.enemy, e.x, e.y, e.w, e.h);
+    ctx.restore();
+  }
+
+  if (player) {
+    const img = IMAGES[hero];
+    const bob = player.onG && player.vx ? Math.sin(t/4)*2 : 0;
+    ctx.save();
+    ctx.translate(player.x + player.w/2, player.y + player.h);
+    ctx.scale(player.dir, 1);
+    ctx.drawImage(img, -player.w/2, -player.h - bob, player.w, player.h);
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  document.getElementById("hudZone").textContent = player ? zoneName(player.x) : "";
+  document.getElementById("hudStar").textContent = "星星 " + collected + " / 3";
+}
+
+function loop() {
+  step();
+  if (state === "play" || state === "quiz") draw();
+  requestAnimationFrame(loop);
+}
+
+function resize() {
+  canvas.width = W = window.innerWidth * devicePixelRatio;
+  canvas.height = H = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  W = window.innerWidth; H = window.innerHeight;
+}
+
+window.addEventListener("keydown", e => {
+  keys[e.key] = true;
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+});
+window.addEventListener("keyup", e => { keys[e.key] = false; });
+
+function bindHold(el, k) {
+  const on = ev => { ev.preventDefault(); hold[k] = true; };
+  const off = ev => { ev.preventDefault(); hold[k] = false; };
+  el.addEventListener("pointerdown", on);
+  el.addEventListener("pointerup", off);
+  el.addEventListener("pointercancel", off);
+  el.addEventListener("pointerleave", off);
+}
+document.querySelectorAll(".ctrl").forEach(b => bindHold(b, b.dataset.k));
+
+document.getElementById("pickBoy").onclick = () => {
+  hero = "boy";
+  document.getElementById("pickBoy").classList.add("pick");
+  document.getElementById("pickGirl").classList.remove("pick");
+  document.getElementById("go").disabled = false;
+};
+document.getElementById("pickGirl").onclick = () => {
+  hero = "girl";
+  document.getElementById("pickGirl").classList.add("pick");
+  document.getElementById("pickBoy").classList.remove("pick");
+  document.getElementById("go").disabled = false;
+};
+document.getElementById("go").onclick = () => { resetPlay(); };
+document.getElementById("again").onclick = () => {
+  document.getElementById("end").classList.add("hidden");
+  document.getElementById("start").classList.remove("hidden");
+  state = "menu";
+};
+
+(async function init(){
+  canvas = document.getElementById("game");
+  ctx = canvas.getContext("2d");
+  resize();
+  window.addEventListener("resize", resize);
+  IMAGES.boy = await loadImg("assets/boy.png");
+  IMAGES.girl = await loadImg("assets/girl.png");
+  IMAGES.star = await loadImg("assets/star.png");
+  IMAGES.enemy = await loadImg("assets/enemy.png");
+  IMAGES.flag = await loadImg("assets/flag.png");
+  layout();
+  loop();
+  try {
+    const pub = await fetch("public.json").then(r => r.ok ? r.json() : null).catch(() => null);
+    const j = await fetch("ip.json").then(r => r.ok ? r.json() : null).catch(() => null);
+    const url = (pub && pub.url) || (j && j.url) || (location.hostname !== "127.0.0.1" && location.hostname !== "localhost" ? location.href : "");
+    if (url) {
+      document.getElementById("shareUrl").textContent = url;
+      document.getElementById("shareBox").style.display = "block";
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
