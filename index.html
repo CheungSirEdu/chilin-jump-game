@@ -165,7 +165,7 @@ const LEVELS = [
         enemies: [en(300, 80, 650), en(1300, 1160, 1480)],
         stars: [{x:500, y:330, got:false, q:0}, {x:1580, y:365, got:false, q:1}],
         flag: {x:2100, y:GROUND-150, w:70, h:150},
-        decos: [{k:"sign", x:80, y:GROUND-70, t:"出發"}, {k:"hill", x:260, y:GROUND, c:"#6bb36a"}]
+        decos: [{k:"sign", x:20, y:GROUND-70, t:"出發"}, {k:"hill", x:260, y:GROUND, c:"#6bb36a"}]
       };
     }
   },
@@ -180,15 +180,14 @@ const LEVELS = [
     build() {
       return {
         solids: [
-          plat(0, GROUND, 700, 220, {kind:"metal"}),
+          plat(0, GROUND, 1780, 220, {kind:"metal"}),
           plat(160, 480, 120, 22, {kind:"metal"}),
           plat(300, 410, 120, 22, {kind:"metal"}),
           plat(450, 340, 180, 22, {kind:"metal"}),
-          plat(820, GROUND, 780, 220, {kind:"metal"}),
           {x:1050, y:GROUND-110, w:58, h:110, kind:"pipe"},
           plat(1260, 485, 180, 22, {kind:"metal"}),
           plat(1420, 425, 260, 22, {kind:"metal"}),
-          plat(1780, GROUND, 720, 220, {kind:"metal"})
+          plat(1900, GROUND, 600, 220, {kind:"metal"})
         ],
         enemies: [en(200, 40, 620, {vx:1.05}), en(1200, 860, 1450, {vx:1.1})],
         stars: [{x:500, y:280, got:false, q:0}, {x:1520, y:365, got:false, q:1}],
@@ -208,12 +207,11 @@ const LEVELS = [
     build() {
       return {
         solids: [
-          plat(0, GROUND, 900, 220, {kind:"wood"}),
+          plat(0, GROUND, 2500, 220, {kind:"wood"}),
           plat(280, 508, 150, 24, {kind:"bounce"}),
           plat(500, GROUND-8, 220, 16, {kind:"belt", belt:1.8}),
           plat(430, 420, 160, 24, {kind:"wood"}),
           plat(640, 350, 190, 24, {kind:"wood"}),
-          plat(1020, GROUND, 1480, 220, {kind:"wood"}),
           plat(1200, GROUND-8, 200, 16, {kind:"belt", belt:1.5}),
           plat(1460, 480, 200, 24, {kind:"wood"}),
           plat(1640, 420, 260, 24, {kind:"wood"})
@@ -236,21 +234,21 @@ const LEVELS = [
     build() {
       return {
         solids: [
-          plat(0, GROUND, 520, 220),
-          plat(620, 470, 140, 24, {kind:"cloud", crumb:true}),
-          plat(840, 390, 130, 24, {kind:"cloud", crumb:true}),
-          plat(1060, GROUND, 360, 220),
-          plat(1460, 485, 180, 24, {kind:"cloud", crumb:true}),
-          plat(1660, 425, 200, 24, {kind:"cloud"}),
-          plat(1880, 365, 240, 24, {kind:"cloud"}),
+          plat(0, GROUND, 560, 220),
+          plat(620, 470, 160, 24, {kind:"cloud"}),
+          plat(820, 390, 180, 24, {kind:"cloud"}),
+          plat(1060, GROUND, 420, 220),
+          plat(1480, 485, 180, 24, {kind:"cloud", crumb:true}),
+          plat(1680, 425, 200, 24, {kind:"cloud"}),
+          plat(1900, 365, 240, 24, {kind:"cloud"}),
           plat(2200, GROUND, 400, 220),
           plat(2320, 508, 120, 22, {kind:"bounce"})
         ],
         enemies: [
           en(180, 40, 420),
-          {x:2100, y:GROUND-36, w:54, h:36, vx:0.8, min:2040, max:2320, dead:false, kind:"walk"}
+          {x:2280, y:GROUND-36, w:54, h:36, vx:0.8, min:2220, max:2480, dead:false, kind:"walk"}
         ],
-        stars: [{x:860, y:330, got:false, q:0}, {x:1960, y:305, got:false, q:1}],
+        stars: [{x:870, y:330, got:false, q:0}, {x:1980, y:305, got:false, q:1}],
         flag: {x:2420, y:GROUND-150, w:70, h:150},
         decos: [{k:"sign", x:40, y:GROUND-70, t:"吸力"}, {k:"hill", x:2300, y:GROUND, c:"#8ec4e6"}]
       };
@@ -267,13 +265,12 @@ const LEVELS = [
     build() {
       return {
         solids: [
-          plat(0, GROUND, 600, 220),
+          plat(0, GROUND, 1340, 220),
           plat(220, 430, 140, 26),
           {x:480, y:GROUND-96, w:56, h:96, kind:"pipe"},
-          plat(720, GROUND, 500, 220, {kind:"metal"}),
           plat(780, 470, 120, 22, {kind:"metal"}),
           plat(920, 390, 160, 22, {kind:"metal"}),
-          plat(1320, GROUND, 500, 220, {kind:"wood"}),
+          plat(1320, GROUND, 1040, 220, {kind:"wood"}),
           plat(1480, 508, 140, 24, {kind:"bounce"}),
           plat(1680, GROUND-8, 140, 16, {kind:"belt", belt:1.6}),
           plat(1880, 480, 180, 24, {kind:"cloud", crumb:true}),
@@ -437,6 +434,7 @@ function winLevel() {
 function openQuiz(qid) {
   quizId = qid;
   state = "quiz";
+  if (player && player.stand && player.stand.crumb) player.stand.shake = 0;
   const Q = liveQuestions[qid] = shuffleQuestion(LEVELS[levelIndex].questions[qid]);
   document.getElementById("qtext").textContent = "科學題：" + Q.q;
   const box = document.getElementById("qopts");
@@ -478,7 +476,7 @@ function step() {
     }
     if (s.shake) {
       s.shake++;
-      if (s.shake > 28) { s.fallen = true; s.shake = 0; s.y += 400; }
+      if (s.shake > 70) { s.fallen = true; s.shake = 0; s.y += 400; }
     }
   }
 
@@ -743,7 +741,11 @@ document.getElementById("homeBtn").onclick = () => {
   IMAGES.enemy = await loadImg("assets/enemy.png");
   IMAGES.flag = await loadImg("assets/flag.png");
   const s = loadSave();
-  if (s.hero === "girl" || s.hero === "boy") hero = s.hero;
+  if (s.hero === "girl" || s.hero === "boy") {
+    hero = s.hero;
+    document.getElementById(hero === "girl" ? "pickGirl" : "pickBoy").classList.add("pick");
+    enableStart();
+  }
   layout();
   loop();
 })();
