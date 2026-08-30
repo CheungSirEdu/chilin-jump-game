@@ -139,20 +139,29 @@ const loadImg = src => new Promise((res, rej) => {
 const QUESTIONS = [
   {
     q: "磁石最容易吸起哪一種物品？",
-    opts: ["鐵釘", "膠尺", "木塊", "白紙"],
-    a: 0
+    opts: ["膠尺", "木塊", "鐵釘", "白紙"],
+    a: 2
   },
   {
     q: "小朋友把箱子推向遠處。這是哪一種力？",
-    opts: ["推力", "拉力", "浮力", "電力"],
-    a: 0
+    opts: ["拉力", "浮力", "電力", "推力"],
+    a: 3
   },
   {
     q: "把球拋向天空，球會掉下來，主要是因為：",
-    opts: ["地心吸力", "風力", "磁力", "聲音"],
-    a: 0
+    opts: ["風力", "地心吸力", "磁力", "聲音"],
+    a: 1
   }
 ];
+
+function shuffleQuestion(Q) {
+  const items = Q.opts.map((t, i) => ({ t, ok: i === Q.a }));
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return { q: Q.q, opts: items.map(x => x.t), a: items.findIndex(x => x.ok) };
+}
 
 const WORLD_W = 5600;
 const GROUND = 560;
@@ -320,7 +329,7 @@ function win() {
 function openQuiz(qid) {
   quizId = qid;
   state = "quiz";
-  const Q = QUESTIONS[qid];
+  const Q = QUESTIONS[qid] = shuffleQuestion(QUESTIONS[qid]);
   document.getElementById("qtext").textContent = "科學題：" + Q.q;
   const box = document.getElementById("qopts");
   box.innerHTML = "";
