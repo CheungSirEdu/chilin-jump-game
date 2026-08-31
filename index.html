@@ -129,7 +129,7 @@
     <div class="panel" id="start">
       <div class="card">
         <h1>小小發明家跳跳關</h1>
-        <p class="lead">共五關：草地、磁石、推力、地心吸力、小小發明家。<br>題目跟課本課題，方便溫書。每關限時50秒。<br>請填班別和學號，不用寫姓名。</p>
+        <p class="lead">共五關：草地、磁石、推力、地心吸力、小小發明家。<br>題目配合課本課題，方便溫習。每關限時五十秒。<br>請填寫班別及學號，無須填寫姓名。</p>
         <div class="ids">
           <label>班別<input id="klass" maxlength="8" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="例如 2A"></label>
           <label>學號<input id="stuno" maxlength="3" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例如 12"></label>
@@ -139,8 +139,8 @@
           <button class="char-btn" id="pickGirl" type="button"><img src="assets/girl.png" alt="小蓮" />小蓮</button>
         </div>
         <button class="primary" id="go" type="button" disabled>開始遊戲</button>
-        <button class="primary blue hidden" id="cont" type="button">繼續闖關</button>
-        <p class="hint">電腦：← → 行走，↑ 或空白鍵跳躍<br>iPad／iPhone：用畫面左下角左右走、右下角跳</p>
+        <button class="primary blue hidden" id="cont" type="button">繼續遊戲</button>
+        <p class="hint">電腦：按 ← → 左右移動，按 ↑ 或空白鍵跳躍<br>平板電腦或智能電話：按畫面左下方左右移動，按右下方跳躍</p>
       </div>
     </div>
 
@@ -148,7 +148,7 @@
       <div class="card">
         <h1 id="endTitle">完成！</h1>
         <p class="lead" id="endMsg"></p>
-        <button class="primary" id="again" type="button">再試本關</button>
+        <button class="primary" id="again" type="button">重玩本關</button>
         <button class="primary blue hidden" id="nextLv" type="button">下一關</button>
         <button class="primary hidden" id="homeBtn" type="button" style="margin-top:8px;background:#6b7c6c">返回開始</button>
       </div>
@@ -547,7 +547,7 @@ function reportScore(result) {
 }
 
 function die(reason) {
-  showEnd("本關要重來", reason + "<br>答錯、碰到小蟲、掉進洞或時間到，只重玩這一關。", "lose");
+  showEnd("本關須重新開始", reason + "<br>答錯題目、碰到小蟲、掉進洞穴或時間完結，只須重玩本關。", "lose");
 }
 
 function usedSecs() {
@@ -560,7 +560,7 @@ function winLevel() {
   const used = usedSecs();
   if (levelIndex >= LEVELS.length - 1) {
     wonAll = true;
-    showEnd("全部完成！", "你已闖完五關，最後一關用了" + used + "秒。", "winall");
+    showEnd("全部完成！", "你已通過五關，最後一關用了" + used + "秒。", "winall");
   } else {
     showEnd("過關了！", "你用了" + used + "秒。<br>下一關是「" + LEVELS[levelIndex + 1].name + "」。", "win");
   }
@@ -651,7 +651,7 @@ function step() {
 
   if (player.x < 8) player.x = 8;
   if (player.x > WORLD_W - player.w - 8) player.x = WORLD_W - player.w - 8;
-  if (player.y > GROUND + 200) { die("掉進洞裏了。"); return; }
+  if (player.y > GROUND + 200) { die("掉進洞穴了。"); return; }
 
   const pb = {x:player.x+6, y:player.y+8, w:player.w-12, h:player.h-8};
 
@@ -675,7 +675,7 @@ function step() {
       e.dead = true;
       player.vy = -8;
     } else {
-      die("碰到小蟲了。用腳從上面踩下去才安全。");
+      die("碰到小蟲了。請從上方踏下才安全。");
       return;
     }
   }
@@ -820,7 +820,7 @@ function tickTimer() {
   if (timeLeft > 0) return;
   timeLeft = 0;
   document.getElementById("quiz").classList.remove("show");
-  die("時間到了。每關要在50秒內過關。");
+  die("時間到了。每關須於五十秒內過關。");
 }
 
 function loop() {
